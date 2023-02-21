@@ -31,8 +31,20 @@ async fn chat_handler(client: Arc<Client>, bot: Bot, message: Message) -> Respon
                     bot.send_message(chat_id, "Hello! I'm Serika, a chatbot.")
                         .await?;
                 }
-                "session" => {
-                    // TODO: set to new session id
+                "reset" => {
+                    let response = client
+                        .delete(format!("{}/message/tg-{}-default", *API_URL, chat_id))
+                        .send()
+                        .await?;
+                    if response.status() != 200 {
+                        bot.send_message(chat_id, "[SERIKA] API error")
+                            .reply_to_message_id(message.id)
+                            .await?;
+                        return Ok(());
+                    }
+                    bot.send_message(chat_id, "[SERIKA] Session was reset")
+                        .reply_to_message_id(message.id)
+                        .await?;
                 }
                 _ => {
                     bot.send_message(chat_id, "Unknown command")
@@ -50,8 +62,11 @@ async fn chat_handler(client: Arc<Client>, bot: Bot, message: Message) -> Respon
             .json(&json!({ "message": text }))
             .send()
             .await?;
+
         if response.status() != 200 {
-            bot.send_message(chat_id, "[SERIKA ERROR] API error")
+            let data = response.json::<Value>().await.unwrap();
+            let error = data["error"].as_str().unwrap();
+            bot.send_message(chat_id, "[SERIKA] API error\n{error}")
                 .reply_to_message_id(message.id)
                 .await?;
             return Ok(());

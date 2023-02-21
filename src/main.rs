@@ -66,7 +66,7 @@ async fn chat_handler(client: Arc<Client>, bot: Bot, message: Message) -> Respon
         if response.status() != 200 {
             let data = response.json::<Value>().await.unwrap();
             let error = data["error"].as_str().unwrap();
-            bot.send_message(chat_id, "[SERIKA] API error\n{error}")
+            bot.send_message(chat_id, format!("[SERIKA] API error\n{error}"))
                 .reply_to_message_id(message.id)
                 .await?;
             return Ok(());
